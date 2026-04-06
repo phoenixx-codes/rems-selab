@@ -1,0 +1,353 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RMS â€” Restaurant Management (Prototype)</title>
+  <style>
+    :root {
+      --bg: #0a0f0d;
+      --bg-card: rgba(17, 24, 20, 0.72);
+      --border: rgba(16, 185, 129, 0.15);
+      --accent: #10b981;
+      --accent-dim: rgba(16, 185, 129, 0.12);
+      --text: #e8f0ec;
+      --muted: #8fa399;
+      --danger: #f87171;
+      --warn: #fbbf24;
+      --radius: 14px;
+      --font: "Segoe UI", system-ui, -apple-system, sans-serif;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body {
+      font-family: var(--font);
+      background: linear-gradient(145deg, #060908 0%, #0d1512 40%, #0a120e 100%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse 80% 50% at 20% -10%, rgba(16,185,129,0.08), transparent),
+                  radial-gradient(ellipse 60% 40% at 100% 0%, rgba(16,185,129,0.05), transparent);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .app { display: flex; min-height: 100vh; position: relative; z-index: 1; }
+    .sidebar {
+      width: 260px;
+      flex-shrink: 0;
+      background: rgba(8, 12, 10, 0.85);
+      backdrop-filter: blur(16px);
+      border-right: 1px solid var(--border);
+      padding: 1.25rem 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .brand {
+      padding: 0 1.25rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 0.75rem;
+    }
+    .brand h1 { font-size: 1.1rem; font-weight: 700; color: var(--accent); letter-spacing: -0.02em; }
+    .brand p { font-size: 0.75rem; color: var(--muted); margin-top: 0.25rem; }
+    .role-pill {
+      margin: 0 1.25rem 1rem;
+      padding: 0.5rem 0.75rem;
+      background: var(--accent-dim);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 0.75rem;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .nav { list-style: none; flex: 1; overflow-y: auto; }
+    .nav a {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.65rem 1.25rem;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      border-left: 3px solid transparent;
+      transition: color 0.2s, background 0.2s, border-color 0.2s;
+    }
+    .nav a:hover { color: var(--text); background: rgba(16,185,129,0.06); }
+    .nav a.active { color: var(--accent); background: var(--accent-dim); border-left-color: var(--accent); }
+    .nav a.hidden { display: none; }
+    .sidebar-footer { padding: 1rem 1.25rem; border-top: 1px solid var(--border); }
+    .btn-ghost {
+      width: 100%;
+      padding: 0.5rem;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+    .btn-ghost:hover { color: var(--text); border-color: var(--accent); }
+    .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      background: rgba(8, 12, 10, 0.4);
+      backdrop-filter: blur(8px);
+    }
+    .topbar h2 { font-size: 1.15rem; font-weight: 600; }
+    .content { padding: 1.5rem; flex: 1; overflow-y: auto; }
+    .view { display: none; animation: fadeIn 0.25s ease; }
+    .view.active { display: block; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: none; } }
+    .grid-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .card {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .card:hover { border-color: rgba(16,185,129,0.35); }
+    .card .label { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .card .value { font-size: 1.65rem; font-weight: 700; color: var(--accent); margin-top: 0.35rem; }
+    .card .sub { font-size: 0.8rem; color: var(--muted); margin-top: 0.25rem; }
+    .panel {
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+    .panel-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 1rem; }
+    .panel-head h3 { font-size: 1rem; font-weight: 600; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+    input, select, textarea {
+      background: rgba(0,0,0,0.35);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.5rem 0.75rem;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 0.875rem;
+    }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      border: none;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s, opacity 0.15s;
+    }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: linear-gradient(135deg, #059669, var(--accent)); color: #fff; box-shadow: 0 4px 14px rgba(16,185,129,0.35); }
+    .btn-primary:hover { opacity: 0.95; }
+    .btn-secondary { background: rgba(255,255,255,0.06); color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-danger { background: rgba(248,113,113,0.2); color: var(--danger); border: 1px solid rgba(248,113,113,0.4); }
+    .btn-sm { padding: 0.35rem 0.65rem; font-size: 0.8rem; }
+    table.data-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+    table.data-table th, table.data-table td { padding: 0.65rem 0.5rem; text-align: left; border-bottom: 1px solid var(--border); }
+    table.data-table th { color: var(--muted); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; }
+    table.data-table tr:hover td { background: rgba(16,185,129,0.04); }
+    .badge {
+      display: inline-block;
+      padding: 0.2rem 0.5rem;
+      border-radius: 6px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .badge-available { background: rgba(16,185,129,0.2); color: var(--accent); }
+    .badge-occupied { background: rgba(59,130,246,0.2); color: #60a5fa; }
+    .badge-reserved { background: rgba(251,191,36,0.2); color: var(--warn); }
+    .badge-pending { background: rgba(251,191,36,0.2); color: var(--warn); }
+    .badge-preparing { background: rgba(96,165,250,0.2); color: #93c5fd; }
+    .badge-completed { background: rgba(16,185,129,0.25); color: #6ee7b7; }
+    .badge-draft { background: rgba(148,163,184,0.2); color: #cbd5e1; }
+    .badge-billed { background: rgba(167,139,250,0.2); color: #c4b5fd; }
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 1rem;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: #111916;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      max-width: 520px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+      animation: slideIn 0.25s ease;
+    }
+    .modal-header { padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .modal-header h4 { font-size: 1rem; }
+    .modal-body { padding: 1.25rem; }
+    .modal-footer { padding: 1rem 1.25rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 0.5rem; }
+    .form-row { margin-bottom: 0.85rem; }
+    .form-row label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.35rem; }
+    .form-row input, .form-row select, .form-row textarea { width: 100%; }
+    .toast-wrap { position: fixed; bottom: 1.25rem; right: 1.25rem; z-index: 2000; display: flex; flex-direction: column; gap: 0.5rem; }
+    .toast {
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      font-size: 0.875rem;
+      max-width: 360px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      animation: slideIn 0.3s ease;
+      border: 1px solid var(--border);
+    }
+    .toast.success { background: rgba(6,78,59,0.95); color: #d1fae5; border-color: var(--accent); }
+    .toast.error { background: rgba(127,29,29,0.95); color: #fecaca; border-color: var(--danger); }
+    .login-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      position: relative;
+      z-index: 1;
+    }
+    .login-box {
+      width: 100%;
+      max-width: 420px;
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.35);
+    }
+    .login-box h1 { color: var(--accent); font-size: 1.5rem; margin-bottom: 0.5rem; }
+    .login-box p { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+    .role-btns { display: flex; flex-direction: column; gap: 0.65rem; }
+    .role-btns .btn { width: 100%; justify-content: flex-start; padding: 0.85rem 1rem; }
+    .empty { color: var(--muted); text-align: center; padding: 2rem; font-size: 0.9rem; }
+    .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.75rem; }
+    .menu-tile {
+      background: rgba(0,0,0,0.25);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 0.85rem;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .menu-tile:hover { border-color: rgba(16,185,129,0.4); transform: translateY(-2px); }
+    .menu-tile.unavailable { opacity: 0.5; pointer-events: none; }
+    .split-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 900px) {
+      .app { flex-direction: column; }
+      .sidebar { width: 100%; flex-direction: row; flex-wrap: wrap; padding: 0.75rem; }
+      .brand { border: none; margin: 0; padding: 0.5rem 1rem; flex: 1; min-width: 140px; }
+      .nav { display: flex; flex-wrap: wrap; flex: 2; }
+      .nav a { border-left: none; border-bottom: 3px solid transparent; padding: 0.5rem 0.75rem; }
+      .nav a.active { border-left: none; border-bottom-color: var(--accent); }
+      .role-pill { margin: 0.5rem; }
+      .sidebar-footer { width: 100%; }
+      .split-2 { grid-template-columns: 1fr; }
+    }
+    @media print {
+      body * { visibility: hidden; }
+      #modalOverlay.open, #modalOverlay.open * { visibility: visible; }
+      #modalOverlay.open { position: absolute; left: 0; top: 0; width: 100%; min-height: 100%; background: #fff !important; display: flex !important; }
+      #modalOverlay.open .modal { background: #fff !important; color: #111 !important; border: none; box-shadow: none; max-width: 100%; }
+      #modalOverlay.open .modal-header, #modalOverlay.open .modal-footer { display: none !important; }
+      .print-bill, .print-bill * { color: #111 !important; }
+    }
+    .low-stock { color: var(--danger); font-weight: 600; }
+    .chart-bar { display: flex; align-items: flex-end; gap: 4px; height: 120px; margin-top: 0.5rem; }
+    .chart-bar .bar { flex: 1; background: linear-gradient(180deg, var(--accent), #065f46); border-radius: 4px 4px 0 0; min-height: 4px; transition: height 0.4s ease; }
+    .flex { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+    .grow { flex: 1; min-width: 120px; }
+  </style>
+</head>
+<body>
+  <div id="loginScreen" class="login-screen">
+    <div class="login-box">
+      <h1>RMS Prototype</h1>
+      <p>Software Requirements demo â€” no backend. Choose a role to enter.</p>
+      <div class="role-btns">
+        <button type="button" class="btn btn-primary" data-role="admin">Login as Admin</button>
+        <button type="button" class="btn btn-secondary" data-role="staff">Login as Staff</button>
+        <button type="button" class="btn btn-secondary" data-role="kitchen">Login as Kitchen</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="appShell" class="app" style="display:none;">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>RMS</h1>
+        <p>Restaurant Management</p>
+      </div>
+      <div id="rolePill" class="role-pill"></div>
+      <ul class="nav" id="mainNav"></ul>
+      <div class="sidebar-footer">
+        <button type="button" class="btn-ghost" id="btnLogout">Switch role / Logout</button>
+      </div>
+    </aside>
+    <div class="main">
+      <header class="topbar">
+        <h2 id="pageTitle">Dashboard</h2>
+        <div class="toolbar">
+          <input type="search" id="globalSearch" placeholder="Search menuâ€¦" class="hidden" style="min-width:180px;" />
+        </div>
+      </header>
+      <main class="content" id="mainContent"></main>
+    </div>
+  </div>
+
+  <div id="modalOverlay" class="modal-overlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <h4 id="modalTitle">Modal</h4>
+        <button type="button" class="btn btn-sm btn-secondary" id="modalCloseX">âœ•</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+      <div class="modal-footer" id="modalFooter"></div>
+    </div>
+  </div>
+
+  <div id="confirmOverlay" class="modal-overlay" aria-hidden="true">
+    <div class="modal" style="max-width:400px;">
+      <div class="modal-header"><h4 id="confirmTitle">Confirm</h4></div>
+      <div class="modal-body"><p id="confirmMessage"></p></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="confirmCancel">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirmOk">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-wrap" id="toastWrap"></div>
+
+  <script src="js/rms-state.js"></script>
+  <script src="js/rms-views.js"></script>
+  <script src="js/rms-main.js"></script>
+</body>
+</html>

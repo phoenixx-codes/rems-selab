@@ -1,0 +1,7 @@
+# Static site: serve repo root so index.html and js/ are deployed together.
+[build]
+  publish = "."
+
+# If this project lives inside a monorepo folder, set in Netlify UI:
+# Site settings → Build & deploy → Build settings → Base directory = that folder
+# and keep publish = "." (relative to base) or set publish = "." explicitly.
